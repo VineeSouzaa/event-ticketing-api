@@ -38,6 +38,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      typeorm:
+        specifier: ^1.1.2
+        version: 1.1.2(mongodb@7.7.0)(pg@8.23.1)(ts-node@10.9.2(@types/node@24.19.1)(typescript@6.0.3))
     devDependencies:
       '@commitlint/cli':
         specifier: ^21.2.3

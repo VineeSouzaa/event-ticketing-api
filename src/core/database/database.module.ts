@@ -13,9 +13,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         type: 'postgres',
         url: config.getOrThrow<string>('DATABASE_URL'),
         autoLoadEntities: true,
-        // Fine for early local development; switch to TypeORM migrations before this app
-        // resembles anything production-like.
-        synchronize: true,
+        // Migrations are now the source of truth for schema (see core/database/migrations/ and
+        // the migration:* npm scripts) — synchronize must stay off so it doesn't fight them.
+        synchronize: false,
       }),
     }),
   ],
