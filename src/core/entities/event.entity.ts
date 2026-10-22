@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -14,7 +15,9 @@ export enum EventStatus {
   CANCELLED = 'cancelled',
 }
 
+// Backs the home listing: published events ordered by (starts_at, id), keyset-paginated.
 @Entity('events')
+@Index('IDX_events_status_starts_at_id', ['status', 'startsAt', 'id'])
 export class Event {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -30,6 +33,15 @@ export class Event {
 
   @Column()
   venue: string;
+
+  @Column()
+  city: string;
+
+  @Column()
+  category: string;
+
+  @Column({ name: 'image_url', type: 'varchar', nullable: true })
+  imageUrl: string | null;
 
   @Column({ type: 'enum', enum: EventStatus, default: EventStatus.DRAFT })
   status: EventStatus;
