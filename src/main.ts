@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { Env } from './core/config/env.validation';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,7 +16,8 @@ async function bootstrap() {
   );
 
   // Credentials: the session cookie must travel on cross-origin calls from the frontend.
-  const webOrigin = app.get(ConfigService).get<string>('WEB_ORIGIN');
+  const config = app.get<ConfigService<Env, true>>(ConfigService);
+  const webOrigin = config.get('WEB_ORIGIN', { infer: true });
   if (webOrigin) {
     app.enableCors({ origin: webOrigin, credentials: true });
   }
@@ -30,6 +32,6 @@ async function bootstrap() {
   );
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(config.get('PORT', { infer: true }));
 }
 void bootstrap();

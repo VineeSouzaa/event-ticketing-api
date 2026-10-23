@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Env } from '../config/env.validation';
 
 // Structured observability logs only — reservation attempts, cache hit/miss, hold-expiry events.
 // Never catalog or transactional data; that stays in Postgres (see core/database). Correlation-ID
@@ -9,8 +10,8 @@ import { MongooseModule } from '@nestjs/mongoose';
   imports: [
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.getOrThrow<string>('MONGO_URL'),
+      useFactory: (config: ConfigService<Env, true>) => ({
+        uri: config.get('MONGO_URL', { infer: true }),
       }),
     }),
   ],
