@@ -52,9 +52,11 @@ doc.
 
 Create hold → correlation ID generated (propagate it through every log line for that reservation's
 lifecycle) → atomic conditional decrement in Postgres → structured log written (MongoDB) →
-expiry timer started → on confirm (simulated payment webhook endpoint), log "confirmed"; on
+expiry timer started → on payment (simulated payment webhook endpoint), mark `paid` and log it; on
 timeout, expiry job releases the quantity (atomically — must be guarded against racing a
-last-second confirmation: only release if status is still `pending` at release time). Every
+last-second payment: only release if status is still `pending` at release time). Statuses:
+`pending → paid | expired | cancelled`, all three final (no cancelling after payment in v1; that
+would be a refund). Every
 successful state change triggers a Redis cache update + Pub/Sub publish, which the WebSocket
 gateway forwards to clients watching that event.
 
@@ -63,8 +65,13 @@ gateway forwards to clients watching that event.
 MongoDB holds structured logs only (reservation attempts, cache hit/miss, hold-expiry events) —
 **not** catalog or transactional data; that stays in Postgres. Every request gets a correlation ID
 (middleware, generated or propagated from an incoming header) that threads through every log entry
-for that request's lifecycle, including anything the expiry job or the confirm webhook writes on
+for that request's lifecycle, including anything the expiry job or the payment webhook writes on
 its behalf.
+
+Scope was widened in the solution doc's v4 (`decisions/v4-observability-scope.md`): besides logs,
+the project has Prometheus metrics, OpenTelemetry traces and health/readiness endpoints, all
+self-hosted (Grafana, Jaeger/Tempo in compose). Telemetry must never affect correctness — a failing
+sink degrades telemetry only, never a reservation.
 
 ## API design
 
@@ -78,13 +85,13 @@ its behalf.
   on it) to prevent double-decrement on retry/double-click.
 - List endpoints (events) use **cursor-based pagination**, not offset/page.
 - Real-time availability updates go over WebSocket (Redis Pub/Sub → NestJS WS Gateway), layered on
-  top of REST — REST still handles every command (create/confirm/cancel).
+  top of REST — REST still handles every command (create/cancel, plus the payment webhook).
 
 ## Testing
 
 **Jest** (NestJS's default, already scaffolded) — not Vitest. Decided deliberately to minimize
 tooling friction so effort goes into writing good tests for the things that actually matter here:
-the atomic decrement under concurrency, the hold-expiry/confirm race guard, idempotency handling.
+the atomic decrement under concurrency, the hold-expiry/payment race guard, idempotency handling.
 Automated testing discipline is an explicitly identified gap this project exists partly to close —
 don't skip test coverage on the concurrency-sensitive paths to save time.
 
