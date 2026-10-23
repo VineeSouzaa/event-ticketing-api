@@ -12,6 +12,8 @@ not to add a `forwardRef()`.
 - `database/` — Postgres/TypeORM connection and configuration.
 - `cache/` — Redis client configuration.
 - `logging/` — correlation-ID middleware + structured log writer (MongoDB).
+- `errors/` — the central error-code table (code → HTTP status), `AppException` and the error
+  response DTO.
 - `realtime/` — WebSocket gateway + Redis Pub/Sub subscriber. Shared infrastructure, not a
   business feature in itself — slices publish to Redis on state change, this module forwards to
   connected clients.
