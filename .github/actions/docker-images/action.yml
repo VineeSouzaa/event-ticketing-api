@@ -1,0 +1,31 @@
+name: Docker images
+description: >
+  Caches the images Testcontainers needs as tarballs, so runs do not depend on pulling from Docker
+  Hub every time (anonymous pulls from shared runner IPs are rate limited).
+
+inputs:
+  images:
+    description: Space-separated image references, e.g. "postgres:17-alpine mongo:7"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # test/support/containers.ts is where the image tags live: changing a tag busts the cache.
+    - uses: actions/cache@v4
+      with:
+        path: ~/docker-images
+        key: docker-images-${{ hashFiles('test/support/containers.ts') }}-${{ inputs.images }}
+
+    - shell: bash
+      run: |
+        mkdir -p ~/docker-images
+        for image in ${{ inputs.images }}; do
+          file=~/docker-images/$(echo "$image" | tr '/:' '__').tar
+          if [ -f "$file" ]; then
+            docker load -i "$file"
+          else
+            docker pull "$image"
+            docker save "$image" -o "$file"
+          fi
+        done

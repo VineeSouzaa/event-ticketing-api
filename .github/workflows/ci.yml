@@ -1,0 +1,51 @@
+name: CI
+
+# Pull requests run the integration tests only (the real-Postgres ones, which are the checks that
+# matter for correctness). Lint, types, unit and e2e run on every push to main. Unit tests and
+# lint already run in the local pre-commit hook.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/docker-images
+        with:
+          images: postgres:17-alpine
+      - run: pnpm test:integration
+
+  checks:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm lint
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm test
+
+  e2e:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/docker-images
+        with:
+          images: postgres:17-alpine mongo:7
+      - run: pnpm test:e2e

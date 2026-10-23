@@ -1,0 +1,19 @@
+name: Setup
+description: Node (from .nvmrc), pnpm (from package.json "packageManager") and a frozen install
+
+runs:
+  using: composite
+  steps:
+    # Reads the version from package.json's "packageManager"; must run before setup-node so the
+    # pnpm store cache below can find pnpm.
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+
+    - run: pnpm install --frozen-lockfile
+      shell: bash
+      env:
+        HUSKY: 0 # the git hooks are for local commits, not for CI
