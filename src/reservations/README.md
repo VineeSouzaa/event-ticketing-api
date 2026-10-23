@@ -1,13 +1,14 @@
 # reservations
 
-Vertical slice: the hold → confirm/cancel → expire lifecycle. Owns `Reservation` (not shared via
+Vertical slice: the hold → pay / cancel / expire lifecycle (`pending → paid | cancelled | expired`,
+all three final; no cancelling after payment in v1). Owns `Reservation` (not shared via
 `core/`, since nothing outside this slice references it directly).
 
 Flow: create hold (atomic conditional decrement on `TicketTier.available` via `core/database`) →
-structured log written (`core/logging`) → expiry timer started → on confirm (simulated
-payment-webhook endpoint) or on timeout (`reservations.scheduler.ts`), release/finalize — the two
-must be mutually guarded (atomic status check) so a last-second confirmation can't race the expiry
-job.
+structured log written (`core/logging`) → expiry timer started → on payment (simulated
+payment-webhook endpoint, marks the reservation `paid`) or on timeout (`reservations.scheduler.ts`),
+finalize/release — the two must be mutually guarded (atomic status check) so a last-second payment
+can't race the expiry job.
 
 Every successful state change updates the Redis cache and triggers a Pub/Sub publish
 (`core/cache` → `core/realtime`). Reservation creation requires a client-supplied idempotency key

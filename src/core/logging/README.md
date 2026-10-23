@@ -7,7 +7,7 @@ and never joined relationally — a genuine fit for a document store, not an arb
 
 Contains:
 - Correlation-ID middleware — generates or propagates an ID per request, so every log entry tied
-  to one reservation's lifecycle (hold created → confirmed/expired) can be traced end to end.
+  to one reservation's lifecycle (hold created → paid/expired) can be traced end to end.
 - The structured log writer itself (reservation attempts, cache hit/miss, hold-expiry events).
 
 Deliberately hand-built rather than using a managed APM/tracing SaaS (e.g. `@nestjs/observe`) — the

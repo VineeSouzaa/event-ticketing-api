@@ -12,9 +12,11 @@ import { User } from '../core/entities/user.entity';
 
 // Belongs to this slice only — nothing outside `reservations/` references Reservation directly
 // (see src/reservations/README.md and the one-directional dependency rule in CLAUDE.md).
+// PENDING is a held quantity (checkout in progress); PAID, EXPIRED and CANCELLED are final.
+// A paid reservation is never cancelled in v1 — that would be a refund, which is out of scope.
 export enum ReservationStatus {
   PENDING = 'pending',
-  CONFIRMED = 'confirmed',
+  PAID = 'paid',
   EXPIRED = 'expired',
   CANCELLED = 'cancelled',
 }
@@ -53,11 +55,11 @@ export class Reservation {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  // Null once confirmed/cancelled — only meaningful while status is PENDING. The expiry job and
-  // the confirm endpoint must guard against racing each other on this field (see CLAUDE.md).
+  // Null once paid/cancelled — only meaningful while status is PENDING. The expiry job and the
+  // payment webhook must guard against racing each other on this field (see CLAUDE.md).
   @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
   expiresAt: Date | null;
 
-  @Column({ name: 'confirmed_at', type: 'timestamptz', nullable: true })
-  confirmedAt: Date | null;
+  @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
+  paidAt: Date | null;
 }
