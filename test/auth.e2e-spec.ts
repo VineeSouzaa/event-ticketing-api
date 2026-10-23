@@ -5,7 +5,7 @@ import { App } from 'supertest/types';
 
 import { AppModule } from './../src/app.module';
 
-// Runs against the local Postgres from docker-compose (DATABASE_URL, migrations applied).
+// Runs against throwaway Postgres/Mongo containers started by test/support/global-setup.e2e.ts.
 // Each run uses a unique email, so no cleanup is needed.
 describe('Auth (e2e)', () => {
   let app: INestApplication<App>;
